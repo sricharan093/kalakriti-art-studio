@@ -1,0 +1,71 @@
+# ====================================================
+# KalaKriti Art Studio — Git Ignore Rules
+# ====================================================
+
+# 1. Dependencies
+node_modules/
+*/node_modules/
+**/node_modules/
+.pnp
+.pnp.js
+
+# 2. Production build outputs & generated files
+dist/
+client/dist/
+**/dist/
+build/
+**/build/
+.vite/
+client/.vite/
+**/vite/
+
+# 3. Environment files & secrets
+.env
+.env.*
+*.env
+server/.env
+server/.env.*
+client/.env
+client/.env.*
+**/.env
+**/.env.*
+
+# Explicitly track and preserve example environment templates
+!.env.example
+!server/.env.example
+!client/.env.example
+!**/.env.example
+
+# 4. User uploads & runtime media
+# (Keep folder structure via .gitkeep, ignore runtime uploads)
+server/uploads/paintings/*
+!server/uploads/paintings/.gitkeep
+**/uploads/paintings/*
+!**/uploads/paintings/.gitkeep
+
+# 5. Vitest, Jest & Test Coverage
+coverage/
+**/coverage/
+.vitest-cache/
+**/.vitest-cache/
+*.lcov
+
+# 6. Logs & Process Artifacts
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 7. Operating System & IDE Files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

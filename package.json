@@ -1,0 +1,28 @@
+{
+  "name": "art-studio-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-Stack Art Studio Website with Paintings Store, Wall Bookings, and Pottery Requests",
+  "scripts": {
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "seed": "npm run seed --prefix server",
+    "seed:admin": "npm run seed:admin --prefix server",
+    "seed:demo-admin": "npm run seed:demo-admin --prefix server",
+    "create:admin": "npm run create:admin --prefix server --",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "dev": "npm run dev:server",
+    "test": "npm run test --prefix server",
+    "test:client": "npm run test --prefix client",
+    "build:client": "npm run build --prefix client"
+  },
+  "keywords": [
+    "art-studio",
+    "mern",
+    "vite",
+    "express",
+    "mongodb"
+  ],
+  "author": "GDGC Developer",
+  "license": "ISC"
+}
