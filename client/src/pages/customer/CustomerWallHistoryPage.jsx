@@ -112,6 +112,7 @@ export const CustomerWallHistoryPage = () => {
             <thead>
               <tr>
                 <th>Scheduled Date</th>
+                <th>Mural Design</th>
                 <th>Location / Address</th>
                 <th>Surface Area</th>
                 <th>Calculated Price</th>
@@ -136,7 +137,28 @@ export const CustomerWallHistoryPage = () => {
                       </div>
                     </td>
                     <td>
-                      <div style={{ maxWidth: '280px', fontSize: '0.9rem', color: 'var(--color-text-main)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                        <img
+                          src={b.selectedDesign?.previewImage || '/images/p-002.jpg'}
+                          alt={b.selectedDesign?.name || 'Mural Design'}
+                          style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-sm)', objectFit: 'cover', border: '1px solid var(--color-border)' }}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/favicon.svg';
+                          }}
+                        />
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-main)' }}>
+                            {b.selectedDesign?.name || 'Traditional Warli & Folk Murals'}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)' }}>
+                            Hand-painted folk style
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ maxWidth: '240px', fontSize: '0.9rem', color: 'var(--color-text-main)' }}>
                         {b.address}
                       </div>
                     </td>

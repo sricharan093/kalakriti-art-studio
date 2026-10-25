@@ -37,20 +37,33 @@ export const runSeed = async () => {
   await connectDB();
 
   // 1. Seed Studio Metadata (pottery items, glazes, mural rate, currency)
-  const metaDoc = {
-    key: 'studio_config',
-    currency: seedData.currency || 'INR',
-    muralRatePerSqFt: seedData.mural?.ratePerSqFt || 150,
-    potteryItems: seedData.potteryItems || [],
-    glazes: seedData.glazes || []
-  };
+  // Preserve any administrator-configured mural rate; do not overwrite on app restart or re-seed
+  const existingMeta = await StudioMeta.findOne({ key: 'studio_config' });
+  let savedRate = seedData.mural?.ratePerSqFt || 150;
 
-  await StudioMeta.findOneAndUpdate(
-    { key: 'studio_config' },
-    { $set: metaDoc },
-    { upsert: true, new: true }
-  );
-  console.log(`[Seed Importer] Saved studio config: Mural rate = ₹${metaDoc.muralRatePerSqFt}/sq.ft, ${metaDoc.potteryItems.length} pottery items, ${metaDoc.glazes.length} glazes.`);
+  if (!existingMeta) {
+    const newMeta = new StudioMeta({
+      key: 'studio_config',
+      currency: seedData.currency || 'INR',
+      muralRatePerSqFt: savedRate,
+      potteryItems: seedData.potteryItems || [],
+      glazes: seedData.glazes || []
+    });
+    await newMeta.save();
+    console.log(`[Seed Importer] Initialized studio config: Mural rate = ₹${savedRate}/sq.ft, ${newMeta.potteryItems.length} pottery items, ${newMeta.glazes.length} glazes.`);
+  } else {
+    // Preserve administrator configured rate if already present
+    if (existingMeta.muralRatePerSqFt !== undefined && existingMeta.muralRatePerSqFt !== null) {
+      savedRate = existingMeta.muralRatePerSqFt;
+    } else {
+      existingMeta.muralRatePerSqFt = savedRate;
+    }
+    existingMeta.currency = seedData.currency || existingMeta.currency;
+    existingMeta.potteryItems = seedData.potteryItems || existingMeta.potteryItems;
+    existingMeta.glazes = seedData.glazes || existingMeta.glazes;
+    await existingMeta.save();
+    console.log(`[Seed Importer] Preserved studio config: Mural rate = ₹${savedRate}/sq.ft, ${existingMeta.potteryItems.length} pottery items, ${existingMeta.glazes.length} glazes.`);
+  }
 
   // 2. Seed Paintings (idempotent: avoid overwriting existing/sold state on rerun)
   let paintingsInserted = 0;

@@ -36,6 +36,20 @@ const wallBookingSchema = new mongoose.Schema(
       type: Number,
       required: true
     },
+    selectedDesign: {
+      id: {
+        type: String,
+        default: 'traditional-warli'
+      },
+      name: {
+        type: String,
+        default: 'Traditional Warli & Folk Murals'
+      },
+      previewImage: {
+        type: String,
+        default: '/images/p-002.jpg'
+      }
+    },
     status: {
       type: String,
       enum: ['requested', 'confirmed', 'declined', 'cancelled'],

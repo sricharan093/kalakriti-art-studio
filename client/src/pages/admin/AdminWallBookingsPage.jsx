@@ -5,13 +5,30 @@ import { LoadingSpinner } from '../../components/LoadingSpinner.jsx';
 import { EmptyState } from '../../components/EmptyState.jsx';
 import { ErrorMessage } from '../../components/ErrorMessage.jsx';
 import { ConfirmDialog } from '../../components/ConfirmDialog.jsx';
-import { Brush, Calendar, Check, X, CheckCircle, AlertTriangle } from 'lucide-react';
+import {
+  Brush,
+  Calendar,
+  Check,
+  X,
+  CheckCircle,
+  AlertTriangle,
+  DollarSign,
+  Settings,
+  Save,
+  Sparkles
+} from 'lucide-react';
 
 export const AdminWallBookingsPage = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [feedback, setFeedback] = useState(null);
+
+  // Mural Rate Configuration State
+  const [currentRate, setCurrentRate] = useState(150);
+  const [inputRate, setInputRate] = useState('150');
+  const [savingRate, setSavingRate] = useState(false);
+  const [rateFeedback, setRateFeedback] = useState(null);
 
   // Dialog state for confirmation/decline
   const [dialogState, setDialogState] = useState({
@@ -21,6 +38,20 @@ export const AdminWallBookingsPage = () => {
     isProcessing: false,
     dialogError: ''
   });
+
+  const fetchRate = async () => {
+    try {
+      if (typeof wallBookingApi.getMuralRateAdmin === 'function') {
+        const data = await wallBookingApi.getMuralRateAdmin();
+        if (data && data.ratePerSqFt) {
+          setCurrentRate(data.ratePerSqFt);
+          setInputRate(String(data.ratePerSqFt));
+        }
+      }
+    } catch {
+      // Fallback to default if not configured
+    }
+  };
 
   const fetchBookings = async () => {
     try {
@@ -37,7 +68,48 @@ export const AdminWallBookingsPage = () => {
 
   useEffect(() => {
     fetchBookings();
+    fetchRate();
   }, []);
+
+  const handleSaveRate = async (e) => {
+    e.preventDefault();
+    setRateFeedback(null);
+
+    const numericRate = Number(inputRate);
+    if (isNaN(numericRate) || numericRate < 10) {
+      setRateFeedback({
+        type: 'error',
+        text: 'Mural rate must be a valid number of at least ₹10 per sq.ft.'
+      });
+      return;
+    }
+
+    if (numericRate > 10000) {
+      setRateFeedback({
+        type: 'error',
+        text: 'Mural rate cannot exceed ₹10,000 per sq.ft.'
+      });
+      return;
+    }
+
+    try {
+      setSavingRate(true);
+      const res = await wallBookingApi.updateMuralRateAdmin(numericRate);
+      setCurrentRate(res.ratePerSqFt || numericRate);
+      setRateFeedback({
+        type: 'success',
+        text: `Mural rate updated to ₹${res.ratePerSqFt || numericRate} per sq.ft successfully. New customer bookings will immediately use this rate.`
+      });
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Failed to update mural rate.';
+      setRateFeedback({
+        type: 'error',
+        text: msg
+      });
+    } finally {
+      setSavingRate(false);
+    }
+  };
 
   const openConfirmDialog = (booking) => {
     setDialogState({
@@ -114,8 +186,122 @@ export const AdminWallBookingsPage = () => {
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2.2rem', marginBottom: '0.35rem' }}>All Wall Painting Bookings</h1>
         <p style={{ color: 'var(--color-text-muted)', fontSize: '1rem' }}>
-          Review calendar dates requested by clients, inspect wall dimensions, and confirm or decline studio visits.
+          Review calendar dates requested by clients, inspect wall dimensions, configure studio mural rates, and confirm or decline studio visits.
         </p>
+      </div>
+
+      {/* Feature 2: Studio Settings / Mural Pricing Card */}
+      <div className="card" style={{
+        marginBottom: '2.5rem',
+        padding: '1.75rem',
+        border: '1px solid var(--color-terracotta-border)',
+        backgroundColor: 'var(--color-bg-card)',
+        boxShadow: 'var(--shadow-sm)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <div style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: 'var(--radius-sm)',
+              backgroundColor: 'var(--color-terracotta-light)',
+              color: 'var(--color-terracotta)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Settings size={20} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 700 }}>
+                Studio Settings: Mural Pricing Configuration
+              </h2>
+              <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                Set the studio's official baseline rate for architectural wall painting commissions.
+              </span>
+            </div>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: '0.4rem',
+            padding: '0.5rem 1rem',
+            backgroundColor: 'var(--color-bg-subtle)',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--color-border)'
+          }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-light)', textTransform: 'uppercase', fontWeight: 600 }}>
+              Current Active Rate:
+            </span>
+            <strong style={{ fontSize: '1.25rem', color: 'var(--color-terracotta)' }}>
+              ₹{currentRate}/sq.ft
+            </strong>
+          </div>
+        </div>
+
+        {rateFeedback && (
+          <div style={{
+            padding: '0.85rem 1.15rem',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.65rem',
+            backgroundColor: rateFeedback.type === 'success' ? 'var(--color-olive-light)' : 'var(--color-rose-light)',
+            color: rateFeedback.type === 'success' ? 'var(--color-olive)' : 'var(--color-rose)',
+            border: `1px solid ${rateFeedback.type === 'success' ? 'var(--color-olive-border)' : 'var(--color-rose-border)'}`,
+            fontSize: '0.9rem'
+          }}>
+            {rateFeedback.type === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
+            <span>{rateFeedback.text}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveRate} style={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: '1rem',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ flex: '1', minWidth: '220px', maxWidth: '300px' }}>
+            <label className="form-label" htmlFor="muralRateInput" style={{ fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+              Configure New Rate (₹ per Sq.Ft)
+            </label>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <span style={{ position: 'absolute', left: '12px', color: 'var(--color-text-light)', fontWeight: 600 }}>
+                ₹
+              </span>
+              <input
+                id="muralRateInput"
+                type="number"
+                min={10}
+                max={10000}
+                step={5}
+                required
+                value={inputRate}
+                onChange={(e) => setInputRate(e.target.value)}
+                className="form-input"
+                style={{ paddingLeft: '28px', fontSize: '1.05rem', fontWeight: 600 }}
+                placeholder="e.g. 180"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={savingRate || Number(inputRate) === currentRate}
+            className="btn btn-primary"
+            style={{ padding: '0.75rem 1.5rem', fontWeight: 600 }}
+          >
+            <Save size={16} />
+            {savingRate ? 'Saving Rate...' : 'Save Changes'}
+          </button>
+
+          <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', alignSelf: 'center', marginLeft: 'auto' }}>
+            Example: 100 sq.ft × ₹{Number(inputRate) || currentRate} = <strong>₹{((Number(inputRate) || currentRate) * 100).toLocaleString('en-IN')}</strong>. Existing confirmed bookings preserve their agreed price.
+          </div>
+        </form>
       </div>
 
       {feedback && (
@@ -148,6 +334,7 @@ export const AdminWallBookingsPage = () => {
               <tr>
                 <th>Booking Date</th>
                 <th>Client</th>
+                <th>Mural Design</th>
                 <th>Address</th>
                 <th>Wall Size</th>
                 <th>Total Price</th>
@@ -173,7 +360,28 @@ export const AdminWallBookingsPage = () => {
                       </div>
                     </td>
                     <td>
-                      <div style={{ maxWidth: '240px', fontSize: '0.88rem' }}>{b.address}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                        <img
+                          src={b.selectedDesign?.previewImage || '/images/p-002.jpg'}
+                          alt={b.selectedDesign?.name || 'Mural Design'}
+                          style={{ width: '42px', height: '42px', borderRadius: 'var(--radius-sm)', objectFit: 'cover', border: '1px solid var(--color-border)' }}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/favicon.svg';
+                          }}
+                        />
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--color-text-main)' }}>
+                            {b.selectedDesign?.name || 'Traditional Warli & Folk Murals'}
+                          </div>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--color-text-light)' }}>
+                            Architectural Style
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ maxWidth: '220px', fontSize: '0.88rem' }}>{b.address}</div>
                     </td>
                     <td>
                       <strong>{b.wallSize} sq.ft</strong>
@@ -239,6 +447,7 @@ export const AdminWallBookingsPage = () => {
             ? {
                 customerName: currentBooking.customer?.name,
                 bookingDate: currentBooking.bookingDate,
+                selectedDesign: currentBooking.selectedDesign,
                 wallSize: currentBooking.wallSize,
                 address: currentBooking.address,
                 totalPrice: currentBooking.totalPrice,
@@ -265,6 +474,7 @@ export const AdminWallBookingsPage = () => {
             ? {
                 customerName: currentBooking.customer?.name,
                 bookingDate: currentBooking.bookingDate,
+                selectedDesign: currentBooking.selectedDesign,
                 wallSize: currentBooking.wallSize,
                 address: currentBooking.address,
                 totalPrice: currentBooking.totalPrice,

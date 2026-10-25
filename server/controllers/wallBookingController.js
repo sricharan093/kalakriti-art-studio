@@ -1,7 +1,12 @@
 import mongoose from 'mongoose';
 import { WallBooking } from '../models/WallBooking.js';
 import { StudioMeta } from '../models/StudioMeta.js';
-import { createWallBookingSchema, getDaysFromToday } from '../validators/wallBookingValidator.js';
+import {
+  createWallBookingSchema,
+  getDaysFromToday,
+  SUPPORTED_MURAL_DESIGNS,
+  updateMuralRateSchema
+} from '../validators/wallBookingValidator.js';
 
 const DEFAULT_MURAL_RATE = 150;
 
@@ -13,6 +18,17 @@ export const getWallPaintingRate = async (req, res, next) => {
       success: true,
       ratePerSqFt: rate,
       currency: meta?.currency || 'INR'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMuralDesigns = async (req, res, next) => {
+  try {
+    return res.status(200).json({
+      success: true,
+      designs: SUPPORTED_MURAL_DESIGNS
     });
   } catch (error) {
     next(error);
@@ -42,6 +58,16 @@ export const createWallBooking = async (req, res, next) => {
   try {
     const validatedData = createWallBookingSchema.parse(req.body);
 
+    // Resolve mural design
+    const designId = validatedData.designId || req.body.designId || 'traditional-warli';
+    const designObj = SUPPORTED_MURAL_DESIGNS.find((d) => d.id === designId);
+    if (!designObj) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or unsupported mural design selected'
+      });
+    }
+
     // Look up current official studio mural rate
     const meta = await StudioMeta.findOne({ key: 'studio_config' });
     const appliedRate = meta?.muralRatePerSqFt || DEFAULT_MURAL_RATE;
@@ -63,6 +89,11 @@ export const createWallBooking = async (req, res, next) => {
       wallSize: validatedData.wallSize,
       appliedRate,
       totalPrice,
+      selectedDesign: {
+        id: designObj.id,
+        name: designObj.name,
+        previewImage: designObj.previewImage
+      },
       status: 'requested'
     });
 
@@ -219,3 +250,43 @@ export const updateWallBookingStatusAdmin = (newStatus) => {
 
 export const confirmWallBooking = updateWallBookingStatusAdmin('confirmed');
 export const declineWallBooking = updateWallBookingStatusAdmin('declined');
+
+export const getMuralRateAdmin = async (req, res, next) => {
+  try {
+    const meta = await StudioMeta.findOne({ key: 'studio_config' });
+    const rate = meta?.muralRatePerSqFt || DEFAULT_MURAL_RATE;
+    return res.status(200).json({
+      success: true,
+      ratePerSqFt: rate,
+      currency: meta?.currency || 'INR'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateMuralRateAdmin = async (req, res, next) => {
+  try {
+    let { rate } = req.body;
+    if (typeof rate === 'string') {
+      rate = Number(rate);
+    }
+    const validated = updateMuralRateSchema.parse({ rate });
+
+    const meta = await StudioMeta.findOneAndUpdate(
+      { key: 'studio_config' },
+      { $set: { muralRatePerSqFt: validated.rate } },
+      { upsert: true, new: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Mural rate updated to ₹${validated.rate} per sq.ft successfully.`,
+      ratePerSqFt: meta.muralRatePerSqFt,
+      currency: meta.currency || 'INR'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

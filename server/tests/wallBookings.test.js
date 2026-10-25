@@ -228,4 +228,108 @@ describe('Wall Bookings Tests', () => {
     expect(cutoffRes.status).toBe(400);
     expect(cutoffRes.body.message).toContain('at least 3 days before');
   });
+
+  it('Feature 1: allows customer to select supported mural design and rejects invalid design identifiers', async () => {
+    // 1. Check public designs list
+    const designsRes = await request(app).get('/api/wall-bookings/designs');
+    expect(designsRes.status).toBe(200);
+    expect(designsRes.body.designs).toHaveLength(6);
+    expect(designsRes.body.designs.map((d) => d.id)).toContain('nature-botanical');
+
+    // 2. Customer selects a valid design
+    const validBooking = await request(app)
+      .post('/api/wall-bookings')
+      .set('Cookie', customerCookie1)
+      .send({
+        bookingDate: formatDate(35),
+        wallSize: 120,
+        address: 'Botanical Villa, Whitefield',
+        designId: 'nature-botanical'
+      });
+    expect(validBooking.status).toBe(201);
+    expect(validBooking.body.booking.selectedDesign.id).toBe('nature-botanical');
+    expect(validBooking.body.booking.selectedDesign.name).toBe('Nature & Botanical');
+
+    // 3. Customer attempts invalid design identifier -> 400
+    const invalidBooking = await request(app)
+      .post('/api/wall-bookings')
+      .set('Cookie', customerCookie1)
+      .send({
+        bookingDate: formatDate(40),
+        wallSize: 100,
+        address: 'Invalid Design Lane',
+        designId: 'non-existent-graffiti'
+      });
+    expect(invalidBooking.status).toBe(400);
+  });
+
+  it('Feature 2: allows admin to configure mural rate, rejects unauthorized/invalid rates, and preserves existing bookings', async () => {
+    const existingDate = formatDate(45);
+    // 1. Create a booking under original ₹150 rate
+    const initialBooking = await request(app)
+      .post('/api/wall-bookings')
+      .set('Cookie', customerCookie1)
+      .send({
+        bookingDate: existingDate,
+        wallSize: 100,
+        address: 'Legacy Booking Address',
+        designId: 'traditional-warli'
+      });
+    expect(initialBooking.status).toBe(201);
+    expect(initialBooking.body.booking.appliedRate).toBe(150);
+    expect(initialBooking.body.booking.totalPrice).toBe(15000);
+    const legacyBookingId = initialBooking.body.booking._id;
+
+    // 2. Customer attempts to change rate -> 403 Forbidden
+    const custAttempt = await request(app)
+      .put('/api/admin/settings/mural-rate')
+      .set('Cookie', customerCookie1)
+      .send({ rate: 200 });
+    expect(custAttempt.status).toBe(403);
+
+    // 3. Admin submits invalid rate (<10 or >10000 or negative) -> 400
+    const invalidRateRes = await request(app)
+      .put('/api/admin/settings/mural-rate')
+      .set('Cookie', adminCookie)
+      .send({ rate: -50 });
+    expect(invalidRateRes.status).toBe(400);
+
+    const oversizedRateRes = await request(app)
+      .put('/api/admin/settings/mural-rate')
+      .set('Cookie', adminCookie)
+      .send({ rate: 50000 });
+    expect(oversizedRateRes.status).toBe(400);
+
+    // 4. Admin updates rate to ₹180/sq.ft
+    const updateRes = await request(app)
+      .put('/api/admin/settings/mural-rate')
+      .set('Cookie', adminCookie)
+      .send({ rate: 180 });
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.ratePerSqFt).toBe(180);
+
+    // 5. Query public rate endpoint -> returns updated 180
+    const publicRate = await request(app).get('/api/wall-bookings/rate');
+    expect(publicRate.status).toBe(200);
+    expect(publicRate.body.ratePerSqFt).toBe(180);
+
+    // 6. New booking calculates total price with new rate (100 * 180 = 18000)
+    const newBooking = await request(app)
+      .post('/api/wall-bookings')
+      .set('Cookie', customerCookie2)
+      .send({
+        bookingDate: formatDate(50),
+        wallSize: 100,
+        address: 'New Rate Customer Address',
+        designId: 'abstract-geometric'
+      });
+    expect(newBooking.status).toBe(201);
+    expect(newBooking.body.booking.appliedRate).toBe(180);
+    expect(newBooking.body.booking.totalPrice).toBe(18000);
+
+    // 7. Check existing legacy booking in database -> price is strictly preserved at 15000
+    const legacyCheck = await WallBooking.findById(legacyBookingId);
+    expect(legacyCheck.appliedRate).toBe(150);
+    expect(legacyCheck.totalPrice).toBe(15000);
+  });
 });

@@ -3,7 +3,9 @@ import { getAllOrdersAdmin } from '../controllers/orderController.js';
 import {
   getAllWallBookingsAdmin,
   confirmWallBooking,
-  declineWallBooking
+  declineWallBooking,
+  getMuralRateAdmin,
+  updateMuralRateAdmin
 } from '../controllers/wallBookingController.js';
 import {
   getAllPotteryRequestsAdmin,
@@ -27,6 +29,13 @@ router.get('/orders', getAllOrdersAdmin);
 router.get('/wall-bookings', getAllWallBookingsAdmin);
 router.patch('/wall-bookings/:id/confirm', confirmWallBooking);
 router.patch('/wall-bookings/:id/decline', declineWallBooking);
+
+// Studio Settings & Mural Pricing
+router.get('/settings/mural-rate', getMuralRateAdmin);
+router.put('/settings/mural-rate', updateMuralRateAdmin);
+router.patch('/settings/mural-rate', updateMuralRateAdmin);
+router.get('/wall-bookings/rate', getMuralRateAdmin);
+router.put('/wall-bookings/rate', updateMuralRateAdmin);
 
 // Pottery Requests
 router.get('/pottery-requests', getAllPotteryRequestsAdmin);

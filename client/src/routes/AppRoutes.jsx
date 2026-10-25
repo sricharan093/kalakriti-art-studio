@@ -34,6 +34,7 @@ import { AdminOrdersPage } from '../pages/admin/AdminOrdersPage.jsx';
 import { AdminWallBookingsPage } from '../pages/admin/AdminWallBookingsPage.jsx';
 import { AdminPotteryPage } from '../pages/admin/AdminPotteryPage.jsx';
 import { AdminTeamPage } from '../pages/admin/AdminTeamPage.jsx';
+import { AdminSettingsPage } from '../pages/admin/AdminSettingsPage.jsx';
 
 export const AppRoutes = () => {
   return (
@@ -84,6 +85,8 @@ export const AppRoutes = () => {
         <Route path="wall-bookings" element={<AdminWallBookingsPage />} />
         <Route path="pottery-requests" element={<AdminPotteryPage />} />
         <Route path="team" element={<AdminTeamPage />} />
+        <Route path="settings" element={<AdminSettingsPage />} />
+        <Route path="mural-pricing" element={<AdminSettingsPage />} />
       </Route>
 
       {/* Catch-all 404 Route */}

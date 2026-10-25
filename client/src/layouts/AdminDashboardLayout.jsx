@@ -15,7 +15,8 @@ import {
   ShieldCheck,
   Sparkles,
   ExternalLink,
-  Users
+  Users,
+  Settings
 } from 'lucide-react';
 
 export const AdminDashboardLayout = () => {
@@ -184,6 +185,14 @@ export const AdminDashboardLayout = () => {
             aria-current={({ isActive }) => (isActive ? 'page' : undefined)}
           >
             <Users size={18} /> Studio Administrators
+          </NavLink>
+
+          <NavLink
+            to="/admin/settings"
+            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+            aria-current={({ isActive }) => (isActive ? 'page' : undefined)}
+          >
+            <Settings size={18} /> Studio Settings & Mural Pricing
           </NavLink>
 
           {/* Sidebar Footer with Theme & Logout */}

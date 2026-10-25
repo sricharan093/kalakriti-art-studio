@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getWallPaintingRate,
+  getMuralDesigns,
   getBookedDates,
   createWallBooking,
   getMyWallBookings,
@@ -10,8 +11,9 @@ import { authenticate, requireCustomer } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Public routes for pricing info and checking booked dates
+// Public routes for pricing info, designs, and checking booked dates
 router.get('/rate', getWallPaintingRate);
+router.get('/designs', getMuralDesigns);
 router.get('/availability', getBookedDates);
 
 // Customer-only routes

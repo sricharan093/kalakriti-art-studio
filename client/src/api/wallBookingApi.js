@@ -5,6 +5,10 @@ export const wallBookingApi = {
     const res = await api.get('/wall-bookings/rate');
     return res.data;
   },
+  getMuralDesigns: async () => {
+    const res = await api.get('/wall-bookings/designs');
+    return res.data;
+  },
   getBookedDates: async () => {
     const res = await api.get('/wall-bookings/availability');
     return res.data;
@@ -31,6 +35,14 @@ export const wallBookingApi = {
   },
   declineBookingAdmin: async (id) => {
     const res = await api.patch(`/admin/wall-bookings/${id}/decline`);
+    return res.data;
+  },
+  getMuralRateAdmin: async () => {
+    const res = await api.get('/admin/settings/mural-rate');
+    return res.data;
+  },
+  updateMuralRateAdmin: async (rate) => {
+    const res = await api.put('/admin/settings/mural-rate', { rate });
     return res.data;
   }
 };

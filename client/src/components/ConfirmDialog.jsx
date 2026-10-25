@@ -8,7 +8,8 @@ import {
   DollarSign,
   User,
   X,
-  Loader2
+  Loader2,
+  Brush
 } from 'lucide-react';
 
 export const ConfirmDialog = ({
@@ -144,6 +145,17 @@ export const ConfirmDialog = ({
               </span>
               <strong>{bookingDetails.customerName || 'Registered Client'}</strong>
             </div>
+
+            {bookingDetails.selectedDesign && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Brush size={15} /> Mural Style:
+                </span>
+                <strong style={{ color: 'var(--color-terracotta)' }}>
+                  {typeof bookingDetails.selectedDesign === 'object' ? bookingDetails.selectedDesign.name : bookingDetails.selectedDesign}
+                </strong>
+              </div>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
